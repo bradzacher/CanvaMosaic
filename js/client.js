@@ -1,1 +1,2 @@
-// Edit me. Feel free to create additional .js files.
+// require all of the other js files
+require('./uploader');
