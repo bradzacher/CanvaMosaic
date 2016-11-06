@@ -3,6 +3,10 @@
   "name": "mosaic",
   "version": "0.0.0",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "webpack ./js/client.js ./js/bundle.js"
+  },
+  "dependencies": {
+    "webpack": "^1.13.3"
   }
 }
