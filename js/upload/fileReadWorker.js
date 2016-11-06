@@ -8,7 +8,7 @@
  *
  * Output Messages:
  * {
- *     buffer - the ArrayBuffer representation of the input file
+ *     dataUrl - the dataUrl representation of the input file
  * }
  */
 self.addEventListener('message', (e) => {
@@ -21,10 +21,10 @@ self.addEventListener('message', (e) => {
     const reader = new FileReaderSync();
 
     // convert to dataUrl for easy loading
-    const buffer = reader.readAsArrayBuffer(file);
+    const dataUrl = reader.readAsDataURL(file);
 
     // send it back to the main thread
     postMessage({
-        buffer,
+        dataUrl,
     });
 }, false);

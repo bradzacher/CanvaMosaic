@@ -1,7 +1,7 @@
-const tileGenerator = require('./tileGenerator');
+const tileGenerator = require('../generator/tileGenerator');
 
 // start up the background file reader
-const fileReadWorker = new Worker('js/fileReadWorker.js');
+const fileReadWorker = new Worker('js/upload/fileReadWorker.js');
 
 // attach listener to the input element so we can grab the file when the user selects it
 document.getElementById('uploader').addEventListener('change', function uploadHandler() {
@@ -19,9 +19,9 @@ document.getElementById('uploader').addEventListener('change', function uploadHa
 
 // add a listner to the worker so we know when it's done uploading
 fileReadWorker.addEventListener('message', (msg) => {
-    const buffer = msg.data.buffer;
+    const dataUrl = msg.data.dataUrl;
 
     // send the buffer to the generator
-    tileGenerator(buffer);
+    tileGenerator(dataUrl);
 });
 
