@@ -4,12 +4,6 @@
 const settings = require('../mosaic');
 const fetchQueue = require('./fetchQueue');
 
-const inputImage = document.getElementById('inputImage');
-const inputImageCtx = inputImage.getContext('2d');
-const tileResult = document.getElementById('tileResult');
-const tileResultCtx = tileResult.getContext('2d');
-const svgResult  = document.getElementById('result');
-
 // splits an array into N chunks
 // adapted from http://stackoverflow.com/a/10456644/3736051
 function chunkArray(arr, n) {
@@ -18,8 +12,16 @@ function chunkArray(arr, n) {
     return Array.from(Array(n), (x, i) => arr.slice(i * chunkSize, (i * chunkSize) + chunkSize));
 }
 
-class TileGenerator {
-    constructor(dataUrl) {
+class MosaicGenerator {
+    /**
+     * Constructs a new instance of the mosaic generator
+     * @param dataUrl           the dataUrl of the image to generate a mosaic for
+     * @param inputImageCanvas  the ID of the canvas to render the input image into
+     * @param tileCanvas        the ID of the canvas to render the intermediate tile average image into
+     * @param mosaicContainer   the ID of the div container to render the mosaic into
+     * @public
+     */
+    constructor(dataUrl, inputImageCanvas, tileCanvas, mosaicContainer) {
         this.dataUrl = dataUrl;
 
         // build the image representation
@@ -30,13 +32,19 @@ class TileGenerator {
         this.tileColumns = Math.ceil(this.image.width / settings.TILE_WIDTH);
 
         this.tiles = [];
+
+        this.inputImage = document.getElementById(inputImageCanvas);
+        this.inputImageCtx = this.inputImage.getContext('2d');
+        this.tileResult = document.getElementById(tileCanvas);
+        this.tileResultCtx = this.tileResult.getContext('2d');
+        this.svgResult = document.getElementById(mosaicContainer);
     }
 
     /**
-     * Generates
+     * Generates the mosaic
      * @public
      */
-    async generateTiles() {
+    async generate() {
         // clear the dom
         this.resetWorkArea();
 
@@ -44,10 +52,10 @@ class TileGenerator {
         const tiles = this.getTileData();
 
         // calculate the averages
-        await this.calculateTileAverages(tiles);
+        const averages = await this.calculateTileAverages(tiles);
 
         // fetch the mosaic
-        await this.fetchAndRenderMosaic(tiles);
+        await this.fetchAndRenderMosaic(averages);
     }
 
     /**
@@ -56,22 +64,23 @@ class TileGenerator {
      */
     resetWorkArea() {
         // set the canvases to the same size as the input image
-        inputImage.height = this.image.height;
-        inputImage.width = this.image.width;
-        inputImageCtx.drawImage(this.image, 0, 0);
+        this.inputImage.height = this.image.height;
+        this.inputImage.width = this.image.width;
+        this.inputImageCtx.drawImage(this.image, 0, 0);
 
         // appropriately size the intermediate tile canvas so it matches the exact tile sizing
-        tileResult.height = this.tileRows * settings.TILE_HEIGHT;
-        tileResult.width = this.tileColumns * settings.TILE_WIDTH;
+        this.tileResult.height = this.tileRows * settings.TILE_HEIGHT;
+        this.tileResult.width = this.tileColumns * settings.TILE_WIDTH;
 
         // appropriately size the result container
-        svgResult.style.height = `${tileResult.height}px`;
-        svgResult.style.width = `${tileResult.width}px`;
-        svgResult.innerHTML = ''; // clear the container
+        this.svgResult.style.height = `${this.tileResult.height}px`;
+        this.svgResult.style.width = `${this.tileResult.width}px`;
+        this.svgResult.innerHTML = ''; // clear the container
     }
 
     /**
      * Gets the initial tile data from the input image
+     * @returns an array of tiles
      * @private
      */
     getTileData() {
@@ -80,14 +89,14 @@ class TileGenerator {
         // build the tiles from the canvas
         for (let h = 0; h < this.image.height; h += settings.TILE_HEIGHT) {
             for (let w = 0; w < this.image.width; w += settings.TILE_WIDTH) {
-                const sourceTile = inputImageCtx.getImageData(w, h, settings.TILE_WIDTH, settings.TILE_HEIGHT);
-                const destTile = tileResultCtx.getImageData(w, h, settings.TILE_WIDTH, settings.TILE_HEIGHT);
+                const sourceTile = this.inputImageCtx.getImageData(w, h, settings.TILE_WIDTH, settings.TILE_HEIGHT);
+                const destTile = this.tileResultCtx.getImageData(w, h, settings.TILE_WIDTH, settings.TILE_HEIGHT);
                 tiles.push({
                     x: w,
                     y: h,
                     sourceTile,
                     destTile,
-                    destCtx: tileResultCtx,
+                    destCtx: this.tileResultCtx,
                     id: tiles.length,
                 });
             }
@@ -98,9 +107,14 @@ class TileGenerator {
 
     /**
      * Asyncronously calculates the averages for all tiles in the iamge
+     * @param   tiles     array of tiles to calculate for
+     * @returns an array of averages for the tiles
      * @private
      */
     async calculateTileAverages(tiles) {
+        const averages = [];
+
+        // keeps track of which workers have finished
         const workerPromises = [];
         // split the set of tiles into packages of work for background threads
         const workPackages = chunkArray(tiles, 8);
@@ -137,7 +151,7 @@ class TileGenerator {
                     // save the averages back to the original tile objects
                     tileAverages.forEach((t) => {
                         const tile = tiles[t.id];
-                        tile.average = t.average.hex;
+                        averages[t.id] = t.average.hex;
 
                         // draw the average colour to the intermediate canvas
                         const average = t.average.raw;
@@ -165,14 +179,17 @@ class TileGenerator {
             workerPromises.push(prom);
         });
 
-        return Promise.all(workerPromises);
+        return Promise.all(workerPromises)
+            // just return the list of averages
+            .then(() => averages);
     }
 
     /**
      * Fetch all of the mosaic tiles and render them, row by row, into the DOM
+     * @param averages  a list of averages to render
      * @private
      */
-    async fetchAndRenderMosaic(tiles) {
+    async fetchAndRenderMosaic(averages) {
         // use promises to queue the drawing of the SVGs
         // each row can't render until the previous one renders
 
@@ -184,19 +201,19 @@ class TileGenerator {
         let columnPromise = Promise.resolve();
 
         // ties off the last row and sets up its render process
-        function finaliseRow() {
+        const finaliseRow = () => {
             const lastRowDiv = currentRowDiv;
             // set the last row to renderr
             const lastRowRenderPromise = Promise.all(rowPromises).then(() => {
-                svgResult.appendChild(lastRowDiv);
+                this.svgResult.appendChild(lastRowDiv);
             });
 
             // start the new row with the promise from the last (so the new row can't render until the last one does)
             rowPromises = [lastRowRenderPromise];
             currentRowDiv = document.createElement('div');
-        }
+        };
 
-        tiles.forEach((t, i) => {
+        averages.forEach((avg, i) => {
             // are we starting a new row?
             if (i % this.tileColumns === 0 && i !== 0) {
                 finaliseRow();
@@ -206,7 +223,7 @@ class TileGenerator {
             const currentRow = currentRowDiv;
             const lastColPromise = columnPromise;
 
-            const fetchPromise = fetchQueue(`color/${t.average}`)
+            const fetchPromise = fetchQueue(`color/${avg}`)
                 .then(svg => lastColPromise.then(() => {
                     // add the svg to the row - but only after the previous row has finished rendering
                     currentRow.innerHTML += svg;
@@ -220,4 +237,4 @@ class TileGenerator {
     }
 }
 
-module.exports = TileGenerator;
+module.exports = MosaicGenerator;
