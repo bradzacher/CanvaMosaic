@@ -5,7 +5,7 @@
 // Apparently this is a known issue with chrome.
 // As per: http://stackoverflow.com/a/36254449/3736051
 // There are significant performance improvements for not using compound assignments with let assignments
-
+/* eslint-disable operator-assignment */
 
 // load the settings
 const settings = require('../mosaic');
