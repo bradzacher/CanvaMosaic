@@ -59,7 +59,6 @@ self.addEventListener('message', (e) => {
             r: 0,
             g: 0,
             b: 0,
-            // a: 0,
         };
         let pixelCount = 0;
 
@@ -77,13 +76,13 @@ self.addEventListener('message', (e) => {
         const containsPixelsOutsideHeightBound = t.origin.y + sourceTile.height > image.height;
 
         // sum the colour values for the tile's pixels
-        for (let y = 0; y < sourceTile.height; y += 1) {
+        for (let y = 0; y < sourceTile.height; y = y + 1) {
             if (containsPixelsOutsideHeightBound &&
                 y + t.origin.y >= image.height) {
                 // outside bounds - ignore
                 continue;
             }
-            for (let x = 0; x < sourceTile.width; x += 1) {
+            for (let x = 0; x < sourceTile.width; x = x + 1) {
                 if (containsPixelsOutsideWidthBound &&
                     x + t.origin.x >= image.width) {
                     // outside bounds - ignore
@@ -93,20 +92,18 @@ self.addEventListener('message', (e) => {
                 // calculate the flat index
                 const i = (y * byteWidth) + (x * 4);
 
-                average.r += pixels[i + 0];
-                average.g += pixels[i + 1];
-                average.b += pixels[i + 2];
-                // average.a += pixels[i + 3];
+                average.r = average.r + pixels[i + 0];
+                average.g = average.g + pixels[i + 1];
+                average.b = average.b + pixels[i + 2];
 
-                pixelCount += 1;
+                pixelCount = pixelCount + 1;
             }
         }
 
         // calculate the averages
-        average.r /= pixelCount;
-        average.g /= pixelCount;
-        average.b /= pixelCount;
-        // average.a /= pixelCount;
+        average.r = average.r / pixelCount;
+        average.g = average.g / pixelCount;
+        average.b = average.b / pixelCount;
 
         // convert to hex
         const hexAvg = toTwoDigitHex(average.r) + toTwoDigitHex(average.g) + toTwoDigitHex(average.b);

@@ -87,8 +87,8 @@ class MosaicGenerator {
         const tiles = [];
 
         // build the tiles from the canvas
-        for (let h = 0; h < this.image.height; h += settings.TILE_HEIGHT) {
-            for (let w = 0; w < this.image.width; w += settings.TILE_WIDTH) {
+        for (let h = 0; h < this.image.height; h = h + settings.TILE_HEIGHT) {
+            for (let w = 0; w < this.image.width; w = w + settings.TILE_WIDTH) {
                 const sourceTile = this.inputImageCtx.getImageData(w, h, settings.TILE_WIDTH, settings.TILE_HEIGHT);
                 const destTile = this.tileResultCtx.getImageData(w, h, settings.TILE_WIDTH, settings.TILE_HEIGHT);
                 tiles.push({
@@ -156,7 +156,7 @@ class MosaicGenerator {
                         // draw the average colour to the intermediate canvas
                         const average = t.average.raw;
                         const destPixels = tile.destTile.data;
-                        for (let i = 0; i < destPixels.length; i += 4) {
+                        for (let i = 0; i < destPixels.length; i = i + 4) {
                             destPixels[i + 0] = average.r;
                             destPixels[i + 1] = average.g;
                             destPixels[i + 2] = average.b;
@@ -195,22 +195,28 @@ class MosaicGenerator {
 
         // tracks the list of promises for the current row
         let rowPromises = [];
-        // tracks the current row's div container
-        let currentRowDiv = document.createElement('div');
+        // tracks the current row's eventual inner HTML
+        let currentRowHtml = {
+            innerHTML: '',
+        };
         // tracks the previous column's completion promise (used to prevent columns rendering out of order)
         let columnPromise = Promise.resolve();
 
         // ties off the last row and sets up its render process
         const finaliseRow = () => {
-            const lastRowDiv = currentRowDiv;
+            const lastRow = currentRowHtml;
             // set the last row to renderr
             const lastRowRenderPromise = Promise.all(rowPromises).then(() => {
-                this.svgResult.appendChild(lastRowDiv);
+                const div = document.createElement('div');
+                div.innerHTML = lastRow.innerHTML;
+                this.svgResult.appendChild(div);
             });
 
             // start the new row with the promise from the last (so the new row can't render until the last one does)
             rowPromises = [lastRowRenderPromise];
-            currentRowDiv = document.createElement('div');
+            currentRowHtml = {
+                innerHTML: '',
+            };
         };
 
         averages.forEach((avg, i) => {
@@ -220,13 +226,13 @@ class MosaicGenerator {
             }
 
             // locally reference the div so we keep it in our closure
-            const currentRow = currentRowDiv;
+            const currentRow = currentRowHtml;
             const lastColPromise = columnPromise;
 
             const fetchPromise = fetchQueue(`color/${avg}`)
                 .then(svg => lastColPromise.then(() => {
                     // add the svg to the row - but only after the previous row has finished rendering
-                    currentRow.innerHTML += svg;
+                    currentRow.innerHTML = currentRow.innerHTML + svg;
                 }));
 
             rowPromises.push(fetchPromise);

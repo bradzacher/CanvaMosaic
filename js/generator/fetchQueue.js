@@ -28,10 +28,10 @@ function processQueue() {
           .then(response => response.text())
           .then((text) => {
               currentReq.resolveFn(text);
-              inFlightRequestCount -= 1;
+              inFlightRequestCount = inFlightRequestCount - 1;
           });
 
-        inFlightRequestCount += 1;
+        inFlightRequestCount = inFlightRequestCount + 1;
     }
 
     if (requestQueue.length === 0) {
