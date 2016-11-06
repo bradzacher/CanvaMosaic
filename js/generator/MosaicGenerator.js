@@ -1,5 +1,12 @@
 'use strict';
 
+// Please note that the chrome profiler reported that many functions were not being optimised.
+// The error message was "Unsupported let compound assignment".
+// Apparently this is a known issue with chrome.
+// As per: http://stackoverflow.com/a/36254449/3736051
+// There are significant performance improvements for not using compound assignments with let assignments
+
+
 // load the settings
 const settings = require('../mosaic');
 const fetchQueue = require('./fetchQueue');
