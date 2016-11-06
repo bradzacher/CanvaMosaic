@@ -6,10 +6,12 @@ const inputImage = document.getElementById('inputImage');
 const tileResult = document.getElementById('tileResult');
 const svgResult  = document.getElementById('result');
 
-// splits an array into chunks of size n
+// splits an array into N chunks
 // adapted from http://stackoverflow.com/a/10456644/3736051
 function chunkArray(arr, n) {
-    return Array.from(Array(Math.ceil(arr.length / n)), (x, i) => arr.slice(i * n, (i * n) + n));
+    const chunkSize = Math.ceil(arr.length / n);
+
+    return Array.from(Array(n), (x, i) => arr.slice(i * chunkSize, (i * chunkSize) + chunkSize));
 }
 
 function generateTiles(dataUrl) {
@@ -54,7 +56,7 @@ function generateTiles(dataUrl) {
 
     const workerPromises = [];
     // split the set of tiles into packages of work for background threads
-    const workPackages = chunkArray(tiles, 100);
+    const workPackages = chunkArray(tiles, 8);
     // calculate the averages for each tile by sending them to the workers
     workPackages.forEach((tileChunk) => {
         // build the payload to send to the worker
