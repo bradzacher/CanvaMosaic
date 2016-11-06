@@ -1,11 +1,124 @@
-canvas {
-    display: block;
+html {
+    font-family: sans-serif !important;
 }
 
-#result {
+
+.title {
+    font-size: 2rem;
+    padding: 0.5rem;
+}
+
+
+/* styling for the file upload button so it looks fancy */
+.styled-file-upload {
+    overflow: hidden;
+    height: 2rem;
+    width: 20rem;
+    background-color: #56BA89;
+    position: relative;
+    padding: 0.5rem;
+    text-align: center;
+}
+.styled-file-upload * {
+    /* make sure everything has a pointer! */
+    cursor: pointer !important;
+}
+.styled-file-upload label {
+    border-radius: 3px;
+    font-weight: 500;
+    border: none;
+    box-shadow: none;
+    color: #ffffff;
+}
+.styled-file-upload ::-webkit-file-upload-button {
+    /* chrome does something funky by rendering an invisible button
+       this invisible button works fine input wise, but doesn't have the cursor:pointer
+       it also is bigger than the button and ignores all css styling */
+    display: none;
+}
+/* make the file upload box disappear because we only want it for its clicking
+   we make it transparent, and big so that it fills the entire container.
+   this means it'll render on top of the label, and intercept the click events, but will be invisible! */
+.styled-file-upload input[type="file"] {
+    opacity: 0;
+    height: 200%;
+    width: 200%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.styled-file-upload input[type="file"] * {
+    display: none;
+}
+
+
+/* styling for the svg mosaic container
+   use flexbox so the browser compacts the dots with no spacing at all */
+#result,
+#result > div {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: flex-start;
     align-content: flex-start;
+}
+#result {
+    flex-direction: column;
+}
+#result > div {
+    flex-direction: row;
+}
+
+
+/* no-js tabs, adapted from http://youmightnotneedjs.com/  */
+
+.tabs {
+    position: relative;
+    min-height: 180px;
+    display: block;
+    margin: 1em auto 0;
+    width: 100%;
+}
+
+.tab {
+    float: left;
+}
+
+.tab label {
+    cursor: pointer;
+    background: #CFD8DC;
+    font-size: 1.2rem;
+    border-radius: 5px 5px 0 0;
+    padding: .5em 1em;
+}
+
+.tab [type=radio] {
+    position: absolute;
+    height: 0;
+    width: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+}
+.tab [type=radio]:focus+label {
+    outline: 2px dotted #000000;
+}
+
+.content {
+    background: #ffffff;
+    border-radius: 0 5px 5px;
+    padding: .5em 2em;
+    position: absolute;
+    top: 2em; left: 0; right: 0; bottom: 0;
+    opacity: 0;
+}
+
+[type=radio]:checked~label {
+    z-index: 2;
+    background: #56BA89;
+    color: #ffffff;
+}
+
+[type=radio]:checked~label~.content {
+    z-index: 1;
+    opacity: 1;
 }

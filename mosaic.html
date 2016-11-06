@@ -6,11 +6,42 @@
     <title>Mosaic</title>
   </head>
   <body>
-    <input type="file" id="uploader" />
+    <div class="toolbar">
+        <div class="title">Mosaic Image Generator</div>
+        <!-- file upload button -->
+        <div class="styled-file-upload">
+            <input type="file" id="uploader" accept="image/*" />
+            <label for="uploader">Select Image to Mosaic</label>
+        </div>
+    </div>
 
-    <canvas id="inputImage"></canvas>
-    <canvas id="tileResult"></canvas>
-    <div id="result"></div>
+    <!-- no-js tabs, adapted from http://youmightnotneedjs.com/ -->
+
+    <div class="tabs">
+        <div class="tab">
+            <input type="radio" name="tabgroup" id="tab-1" />
+            <label for="tab-1">Original Image</label>
+            <div class="content">
+                <canvas id="inputImage"></canvas>
+            </div>
+        </div>
+
+        <div class="tab">
+            <input type="radio" name="tabgroup" id="tab-2" />
+            <label for="tab-2">Tile Image</label>
+            <div class="content">
+                <canvas id="tileResult"></canvas>
+            </div>
+        </div>
+
+        <div class="tab">
+            <input type="radio" name="tabgroup" id="tab-3" checked />
+            <label for="tab-3">Mosaic</label>
+            <div class="content">
+                <div id="result"></div>
+            </div>
+        </div>
+    </div>
 
     <script type="text/javascript" src="js/bundle.js"></script>
   </body>
