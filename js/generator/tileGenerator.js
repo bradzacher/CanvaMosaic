@@ -65,19 +65,41 @@ function generateTiles(dataUrl) {
 
         const sourceTile = t.sourceTile;
         const pixels = sourceTile.data;
+        const byteWidth = sourceTile.width * 4;
+
+        // If the image is bigger than a multiple of TILE_WIDTH x TILE_HEIGHT
+        // then the last tile in the row/column will be heavily weighted toward black
+        // because of how the image data object works (it marks the pixels as black!).
+
+        // check if the tile contains out of bound pixels
+        // we do this so we can short circuit the if checks inside the loop
+        const containsPixelsOutsideWidthBound = t.x + sourceTile.width > image.width;
+        const containsPixelsOutsideHeightBound = t.y + sourceTile.height > image.height;
 
         // sum the colour values for the tile's pixels
-        for (let i = 0; i < pixels.length; i += 4) {
-            // todo - if the image is bigger than a multiple of TILE_WIDTH x TILE_HEIGHT
-            //        then the last tile in the row/column will be heavily weighted toward black
-            //        because of how the image data object works (it marks the pixels as black!)
+        for (let y = 0; y < sourceTile.height; y += 1) {
+            if (containsPixelsOutsideHeightBound &&
+                y + t.y >= image.height) {
+                // outside bounds - ignore
+                continue;
+            }
+            for (let x = 0; x < sourceTile.width; x += 1) {
+                if (containsPixelsOutsideWidthBound &&
+                    x + t.x >= image.width) {
+                    // outside bounds - ignore
+                    continue;
+                }
 
-            average.r += pixels[i + 0];
-            average.g += pixels[i + 1];
-            average.b += pixels[i + 2];
-            // average.a += pixels[i + 3];
+                // calculate the flat index
+                const i = (y * byteWidth) + (x * 4);
 
-            pixelCount += 1;
+                average.r += pixels[i + 0];
+                average.g += pixels[i + 1];
+                average.b += pixels[i + 2];
+                // average.a += pixels[i + 3];
+
+                pixelCount += 1;
+            }
         }
 
         // calculate the averages
