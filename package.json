@@ -7,6 +7,9 @@
     "build": "webpack ./js/client.js ./js/bundle.js"
   },
   "dependencies": {
+    "eslint": "^3.9.1",
+    "eslint-config-airbnb-base": "^9.0.0",
+    "eslint-plugin-import": "^2.1.0",
     "webpack": "^1.13.3"
   }
 }
