@@ -73,19 +73,19 @@ self.addEventListener('message', (e) => {
 
         // check if the tile contains out of bound pixels
         // we do this so we can short circuit the if checks inside the loop
-        const containsPixelsOutsideWidthBound = t.x + sourceTile.width > image.width;
-        const containsPixelsOutsideHeightBound = t.y + sourceTile.height > image.height;
+        const containsPixelsOutsideWidthBound = t.origin.x + sourceTile.width > image.width;
+        const containsPixelsOutsideHeightBound = t.origin.y + sourceTile.height > image.height;
 
         // sum the colour values for the tile's pixels
         for (let y = 0; y < sourceTile.height; y += 1) {
             if (containsPixelsOutsideHeightBound &&
-                y + t.y >= image.height) {
+                y + t.origin.y >= image.height) {
                 // outside bounds - ignore
                 continue;
             }
             for (let x = 0; x < sourceTile.width; x += 1) {
                 if (containsPixelsOutsideWidthBound &&
-                    x + t.x >= image.width) {
+                    x + t.origin.x >= image.width) {
                     // outside bounds - ignore
                     continue;
                 }
