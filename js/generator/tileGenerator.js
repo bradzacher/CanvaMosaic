@@ -1,5 +1,6 @@
 // load the settings
-const settings = require('../mosaic.js');
+const settings = require('../mosaic');
+const fetchQueue = require('./fetchQueue');
 
 const inputImage = document.getElementById('inputImage');
 const tileResult = document.getElementById('tileResult');
@@ -24,13 +25,15 @@ function generateTiles(dataUrl) {
     inputImageCtx.drawImage(image, 0, 0);
 
     // appropriately size the intermediate tile canvas so it matches the exact tile sizing
-    tileResult.height = Math.floor(image.height / settings.TILE_HEIGHT) * settings.TILE_HEIGHT;
-    tileResult.width = Math.floor(image.width / settings.TILE_WIDTH) * settings.TILE_WIDTH;
+    const tileRows = Math.ceil(image.height / settings.TILE_HEIGHT);
+    const tileColumns = Math.ceil(image.width / settings.TILE_WIDTH);
+    tileResult.height = tileRows * settings.TILE_HEIGHT;
+    tileResult.width = tileColumns * settings.TILE_WIDTH;
     const tileResultCtx = tileResult.getContext('2d');
 
     // appropriately size the result container
-    svgResult.style.height = `${Math.ceil(image.height / settings.TILE_HEIGHT) * settings.TILE_HEIGHT}px`;
-    svgResult.style.width = `${Math.ceil(image.width / settings.TILE_WIDTH) * settings.TILE_WIDTH}px`;
+    svgResult.style.height = `${tileResult.height}px`;
+    svgResult.style.width = `${tileResult.width}px`;
     svgResult.innerHTML = ''; // clear the container
 
     const tiles = [];
@@ -123,28 +126,49 @@ function generateTiles(dataUrl) {
     });
 
     // use promises to queue the drawing of the SVGs
-    // each SVG can't render until the previous one renders
-    let currentPromise = Promise.resolve();
-    tiles.forEach((t) => {
-        const previousPromise = currentPromise;
-        currentPromise = new Promise((resolve) => {
-            // fetch the tile from the server and add it to the result container
-            fetch(`color/${t.average}`)
-                .then(response => response.text())
-                .then((svgText) => {
-                    // convert the svg string to a dom element
-                    const intermediateDiv = document.createElement('div');
-                    intermediateDiv.innerHTML = svgText;
-                    const svg = intermediateDiv.childNodes[0];
+    // each row can't render until the previous one renders
 
-                    // don't render this svg until the previous one has rendered
-                    previousPromise.then(() => {
-                        svgResult.appendChild(svg);
-                        resolve();
-                    });
-                });
+    // tracks the list of promises for the current row
+    let rowPromises = [];
+    // tracks the current row's div container
+    let currentRowDiv = document.createElement('div');
+    // tracks the previous column's completion promise (used to prevent columns rendering out of order)
+    let columnPromise = Promise.resolve();
+
+    // ties off the last row and sets up its render process
+    function finaliseRow() {
+        const lastRowDiv = currentRowDiv;
+        // set the last row to renderr
+        const lastRowRenderPromise = Promise.all(rowPromises).then(() => {
+            svgResult.appendChild(lastRowDiv);
         });
+
+        // start the new row with the promise from the last (so the new row can't render until the last one does)
+        rowPromises = [lastRowRenderPromise];
+        currentRowDiv = document.createElement('div');
+    }
+
+    tiles.forEach((t, i) => {
+        // are we starting a new row?
+        if (i % tileColumns === 0 && i !== 0) {
+            finaliseRow();
+        }
+
+        // locally reference the div so we keep it in our closure
+        const currentRow = currentRowDiv;
+        const lastColPromise = columnPromise;
+
+        const fetchPromise = fetchQueue(`color/${t.average}`)
+            .then(svg => lastColPromise.then(() => {
+                // add the svg to the row - but only after the previous row has finished rendering
+                currentRow.innerHTML += svg;
+            }));
+
+        rowPromises.push(fetchPromise);
+        columnPromise = fetchPromise;
     });
+    // finalise the last row of the mosaic
+    finaliseRow();
 }
 
 module.exports = generateTiles;
