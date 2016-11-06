@@ -1,4 +1,6 @@
-const tileGenerator = require('../generator/tileGenerator');
+'use strict';
+
+const TileGenerator = require('../generator/tileGenerator');
 
 // start up the background file reader
 const fileReadWorker = new Worker('js/upload/fileReadWorker.js');
@@ -22,6 +24,7 @@ fileReadWorker.addEventListener('message', (msg) => {
     const dataUrl = msg.data.dataUrl;
 
     // send the buffer to the generator
-    tileGenerator(dataUrl);
+    const generator = new TileGenerator(dataUrl);
+    generator.generateTiles();
 });
 

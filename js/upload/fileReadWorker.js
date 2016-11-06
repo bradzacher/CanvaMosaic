@@ -1,4 +1,7 @@
 /* globals FileReaderSync */
+
+'use strict';
+
 /**
  * Input Messages:
  *  {
