@@ -1,5 +1,7 @@
 'use strict';
 
+/* eslint-disable operator-assignment */
+
 /**
  * Input Messages:
  *  {

@@ -35,11 +35,11 @@ class MosaicGenerator {
         this.image = new Image();
         this.image.src = dataUrl;
 
+        // calculate the expected tile counts
         this.tileRows = Math.ceil(this.image.height / settings.TILE_HEIGHT);
         this.tileColumns = Math.ceil(this.image.width / settings.TILE_WIDTH);
 
-        this.tiles = [];
-
+        // get references to the dom elements
         this.inputImage = document.getElementById(inputImageCanvas);
         this.inputImageCtx = this.inputImage.getContext('2d');
         this.tileResult = document.getElementById(tileCanvas);
@@ -96,7 +96,9 @@ class MosaicGenerator {
         // build the tiles from the canvas
         for (let h = 0; h < this.image.height; h = h + settings.TILE_HEIGHT) {
             for (let w = 0; w < this.image.width; w = w + settings.TILE_WIDTH) {
+                // get image data for the actual image canvas (for reading and avg calculations)
                 const sourceTile = this.inputImageCtx.getImageData(w, h, settings.TILE_WIDTH, settings.TILE_HEIGHT);
+                // get image data for the intermediate canvas (for writing, only)
                 const destTile = this.tileResultCtx.getImageData(w, h, settings.TILE_WIDTH, settings.TILE_HEIGHT);
                 tiles.push({
                     x: w,

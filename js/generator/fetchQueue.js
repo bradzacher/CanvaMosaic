@@ -1,5 +1,7 @@
 'use strict';
 
+/* eslint-disable operator-assignment */
+
 // chrome only has a limited amount of memory for network requests (in testing it seems like you can simultaneously send approx 20k-22k requests at once)
 // so we have to manage the number of simultaneous, in-flight requests
 
